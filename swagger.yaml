@@ -1,0 +1,379 @@
+# this is an example of the Uber API
+# as a demonstration of an API spec in YAML
+swagger: '2.0'
+info:
+  title: File Cloud
+  description: File Cloud API of student's project (Object Oriented Programming Class - Applied Computer Science KIS AGH)
+  version: "1.0.0"
+# the domain of the service
+host: localhost:4567
+# array of all schemes that your API supports
+schemes:
+  - http
+  - https
+# will be prefixed to all paths
+#basePath: /v1
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /files/{path}/list_folder_content:
+    get:
+      tags:
+        - Files
+        - Directories
+      summary: Folder's content as metadata
+      description: |
+        The List Folder Content endpoint returns information about the content of the specified
+        folder. 
+      parameters:
+        - name: path
+          in: path
+          description: Path of the folder to be listed. Forward slash seperated starting with forward slash so the path /myfolder/subfolder will be called like localhost:4567/files/%2Fmyfolder%2Fsubfolder/list_folder_content (remember of urlencoded forward slashes by %2F (unicode value of forward slash)
+          required: true
+          type: string
+          format: path 
+        - name: recursive
+          in: query
+          description: If true result will contain content of all folders within path
+          required: true
+          type: boolean
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        200:
+          description: A FolderContent object
+          schema:
+            $ref: '#/definitions/FolderContent'
+        401:
+          description: Authorization required
+        404:
+          description: Folder (Path) does not exist
+        405:
+          description: Invalid path parameter (mismatched pattern)
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: Uploads file
+      consumes:
+        - application/octet-stream
+        - text/plain
+      description: |
+        The Upload endpoint listens for uploaded files.
+      parameters:
+        - name: path
+          in: query
+          description: Path of the file where data should be stored. 
+          required: true
+          type: string
+        - name: fileContent
+          in: body
+          required: true
+          schema:
+            type: string
+            format: binary
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        201:
+          description: A FileMetadata object representing uploaded file
+          schema:
+            $ref: '#/definitions/FileMetadata'
+        401:
+          description: Authorization required
+        405:
+          description: Invalid path parameter
+  /files/{path}/download:
+    get:
+      tags:
+        - Files
+      produces:
+        - application/octet-stream
+        - text/plain
+      summary: Downloads file
+      description: |
+        The Download endpoint enables downloading of files.
+      parameters:
+        - name: path
+          in: path
+          description: Path of the file where data should be stored.
+          required: true
+          type: string
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        200:
+          description: A FileMetadata object representing uploaded file
+          headers:
+            X-File-Metadata:
+              type: string
+#                $ref: '#/definitions/FileMetadata'
+          schema:
+            type: file
+        401:
+          description: Authorization required
+        405:
+          description: Invalid path parameter
+  /files/{path}/get_meta_data:
+    get:
+      tags:
+        - Files
+        - Directories
+      description: |
+        Retrieves only meta data of stored resource (directory or file)
+      parameters:
+        - name: path
+          in: path
+          description: Path of the file.
+          required: true
+          type: string
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        200:
+          description: A FileMetadata object representing uploaded file
+          schema:
+            $ref: '#/definitions/FileMetadata'
+        401:
+          description: Authorization required
+        405:
+          description: Invalid path parameter
+  /files/{path}/rename:
+    put:
+      tags:
+        - Files
+      description: |
+        Rename file or directory
+      parameters:
+        - name: path
+          in: path
+          description: Path of the file/directory to be renamed
+          required: true
+          type: string
+        - name: new_name
+          in: query
+          description: new name
+          required: true
+          type: string
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        200:
+          description: A `FileMetadata` or `FolderMetadata` object representing renamed resource
+          schema:
+            $ref: '#/definitions/FileMetadata'
+        401:
+          description: Authorization required
+        405:
+          description: Invalid path parameter
+  /files/{path}/delete:
+    delete:
+      tags:
+        - Files
+        - Directories
+      description: |
+        Rename file or directory
+      parameters:
+        - name: path
+          in: path
+          description: Path of the file/directory to be removed
+          required: true
+          type: string
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        204:
+          description: Successful delete operation
+        401:
+          description: Authorization required
+        405:
+          description: Invalid path parameter
+  /files/{path}/move:
+    put:
+      tags:
+        - Files
+        - Directories
+      description: |
+        Move file or directory between two paths
+      parameters:
+        - name: path
+          in: path
+          description: Path of the file/directory to be moved
+          required: true
+          type: string
+        - name: new_path
+          in: query
+          description: new directory where file is to be stored
+          required: true
+          type: string
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        200:
+          description: Successful delete operation
+          schema:
+            $ref: '#/definitions/FileMetadata'
+        405:
+          description: Invalid path parameter
+  /files/{path}/create_directory:
+    put:
+      tags:
+        - Directories
+      summary: Creates new directory
+      description: |
+        Creates new directory
+      parameters:
+        - name: path
+          in: path
+          description: Path to the new directory. 
+          required: true
+          type: string
+        - name: JSESSIONID
+          in: header
+          type: string
+          format: 16 byte string returned by /users/access 
+      responses:
+        201:
+          description: A FileMetadata object representing uploaded file
+          schema:
+            $ref: '#/definitions/FolderMetadata'
+        401:
+          description: Authorization required
+        405:
+          description: Invalid path parameter
+  /users/create_user:
+    post:
+      tags:
+        - Users
+      description: |
+        Creates new user
+      parameters:
+        - name: user
+          in: body
+          description: Path to the new directory. 
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        201:
+          description: A FileMetadata object representing uploaded file
+          schema:
+            $ref: '#/definitions/FolderMetadata'
+        400:
+          description: User already exist
+          
+  /users/access:
+    get:
+      tags:
+        - Users
+        - Authentication
+      description: |
+        Retrives session id after successful authentication
+      parameters:
+        - name: Authorization
+          in: header
+          description: value has to contain word Basic followed by base64 encoded string containing login and password seperated with colon. See https://en.wikipedia.org/wiki/Basic_access_authentication#Client_side
+          required: true
+          type: string
+          format: Basic base64 encoded login:password
+      responses:
+        200:
+          description: an session id value that has to be provided with all the file operations
+          schema:
+            type: string
+            format: 16 byte random value
+        403:
+          description: Unsuccessful login 
+  
+definitions:
+  FolderMetadata:
+    type: object
+    properties:
+      folder_id:
+        type: integer
+        format: int64
+        description: id of the resouce
+      name:
+        type: string
+        description: printable name of this folder
+      path_lower:
+        type: string
+        description: path to this resource
+      path_display:
+        type: string
+        description: printable version of path to this resource
+      parent_folder_id:
+        type: integer
+        format: int64
+        description: id of the parent folder
+      server_created_at:
+        type: string
+        description: format="%Y-%m-%dT%H:%M:%SZ" date and time of creation of the file in the server side see https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
+  FileMetadata:
+    type: object
+    properties:
+      file_id:
+        type: integer
+        format: int64
+        description: id of the resouce
+      name:
+        type: string
+        description: printable name of this folder
+      path_lower:
+        type: string
+        description: path to this resource
+      path_display:
+        type: string
+        description: printable version of path to this resource
+      enclosing_folder_id:
+        type: integer
+        format: int64
+        description: id of the folder directly containing this file
+      size:
+        type: integer
+        format: int64
+        description: file size in bytes
+      server_created_at:
+        type: string
+        description: format="%Y-%m-%dT%H:%M:%SZ" date and time of creation of the file in the server side see https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
+      server_changed_at:
+        type: string
+        description: format="%Y-%m-%dT%H:%M:%SZ" date and time of last modification of the file in the server side see https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
+  FolderContent:
+    type: object
+    properties:
+      folders:
+        type: array
+        items:
+          $ref: '#/definitions/FolderMetadata'
+        description: Metadata of folders included
+      files:
+        type: array
+        items:
+          $ref: '#/definitions/FileMetadata'
+        description: Metadata of files included  
+  User:
+    type: object
+    properties:
+      user_name:
+        type: string
+        description: user login
+      user_pass:
+        type: string
+        description: user password  
